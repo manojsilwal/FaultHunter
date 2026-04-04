@@ -15,6 +15,7 @@ jobs:
       TRADETALK_BASE_URL: ${{ secrets.TRADETALK_BASE_URL }}
       FAULTHUNTER_REPORT_ROOT: reports
       FAULTHUNTER_ARTIFACT_ROOT: artifacts
+      FAULTHUNTER_BROWSER_PROBE: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,11 +25,29 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Install Python deps
         run: pip install -e '.[dev]'
 
+      - name: Install browser probe deps
+        run: npm install
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
       - name: Generate daily report
         run: python -m faulthunter.cli --profile daily --report-kind daily
+
+      - name: Upload evaluation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: faulthunter-artifacts
+          path: artifacts
 
       - name: Commit reports
         run: |
@@ -39,5 +58,5 @@ jobs:
             exit 0
           fi
           git add reports
-          git commit -m "Add FaultHunter daily report"
+          git commit -m "Add FaultHunter daily report for $(date -u +%F)"
           git push

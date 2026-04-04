@@ -73,6 +73,31 @@ _DAILY_CASES = _BASE_CASES + [
         browser_probe_url="https://finance.yahoo.com/quote/TSLA",
         slow_latency_ms=25000,
     ),
+    TestCase(
+        id="backtest-dual-momentum-5y",
+        feature="backtest",
+        user_question="Would a dual momentum rotation strategy have held up over the last five years?",
+        challenge_type="strategy_validation",
+        required_freshness="historical",
+        endpoint="/backtest",
+        method="POST",
+        query={
+            "preset_id": "dual_momentum",
+            "start_date": "2021-01-01",
+            "end_date": "2026-01-01",
+        },
+        required_fields=[
+            "strategy.name",
+            "strategy.preset_id",
+            "strategy.survivorship_note",
+            "sharpe_ratio",
+            "max_drawdown",
+            "benchmark_cagr",
+            "outperformed",
+            "ai_explanation",
+        ],
+        slow_latency_ms=60000,
+    ),
 ]
 
 

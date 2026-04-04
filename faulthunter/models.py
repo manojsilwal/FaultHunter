@@ -57,6 +57,27 @@ class AppCapture(BaseModel):
     freshness_timestamp: Optional[str] = None
     available_fields: list[str] = Field(default_factory=list)
     raw_payload: Optional[Union[dict[str, Any], str]] = None
+    error_type: Optional[str] = None
+    error_detail: Optional[str] = None
+
+
+class ParityCheck(BaseModel):
+    metric: str
+    app_field: Optional[str] = None
+    app_value: Optional[Union[str, float, int]] = None
+    benchmark_field: Optional[str] = None
+    benchmark_value: Optional[Union[str, float, int]] = None
+    status: str
+    note: str = ""
+
+
+class DiagnosticProbe(BaseModel):
+    name: str
+    endpoint: str
+    status_code: int
+    latency_ms: int
+    outcome: str
+    note: str = ""
 
 
 class BenchmarkResult(BaseModel):
@@ -66,6 +87,8 @@ class BenchmarkResult(BaseModel):
     reference_price: Optional[float] = None
     reference_symbol: Optional[str] = None
     freshness_timestamp: Optional[str] = None
+    snapshot: dict[str, Any] = Field(default_factory=dict)
+    parity_checks: list[ParityCheck] = Field(default_factory=list)
     browser_probe_url: Optional[str] = None
     browser_probe_excerpt: Optional[str] = None
     unavailable_reason: Optional[str] = None
@@ -74,11 +97,20 @@ class BenchmarkResult(BaseModel):
 class Finding(BaseModel):
     test_id: str
     feature: str
+    endpoint: str = ""
+    method: str = "GET"
+    request_payload: dict[str, Any] = Field(default_factory=dict)
     user_question: str
     app_answer_summary: str
     benchmark_summary: str
     benchmark_source: str = ""
     benchmark_evidence: list[str] = Field(default_factory=list)
+    parity_summary: str = ""
+    parity_checks: list[ParityCheck] = Field(default_factory=list)
+    diagnostic_root_cause: str = ""
+    diagnostic_summary: str = ""
+    diagnostic_evidence: list[str] = Field(default_factory=list)
+    diagnostic_probes: list[DiagnosticProbe] = Field(default_factory=list)
     response_time_ms: int = 0
     slow_threshold_ms: int = 0
     slow_response: bool = False

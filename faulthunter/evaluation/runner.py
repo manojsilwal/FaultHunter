@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 from ..case_bank import build_case_bank
+from .diagnostics import analyze_case_diagnostics
 from ..models import BenchmarkResult, EvalRun, Finding, ReportKind, RunProfile, Severity, TestCase, Verdict
 from ..targets.tradetalk import TradeTalkTargetClient
 from ..utils import get_nested_value
@@ -28,6 +29,17 @@ def _benchmark_summary(case: TestCase, benchmark: BenchmarkResult) -> str:
         f"Key evidence fields: {field_list}."
         )
     return " ".join([base] + evidence_bits).strip()
+
+
+def _parity_summary(benchmark: BenchmarkResult) -> str:
+    if not benchmark.parity_checks:
+        return "No Yahoo parity depth was available for this case."
+    counts: dict[str, int] = {}
+    for check in benchmark.parity_checks:
+        counts[check.status] = counts.get(check.status, 0) + 1
+    ordered = ["match", "mismatch", "missing_in_app", "unavailable_in_benchmark", "non_numeric"]
+    bits = [f"{status}={counts[status]}" for status in ordered if counts.get(status)]
+    return " | ".join(bits) if bits else "No parity outcomes recorded."
 
 
 def _price_mismatch(case: TestCase, capture, benchmark: BenchmarkResult) -> tuple[bool, str]:
@@ -148,11 +160,16 @@ def judge_case(case: TestCase, capture, benchmark: BenchmarkResult) -> Finding:
     return Finding(
         test_id=case.id,
         feature=case.feature,
+        endpoint=case.endpoint,
+        method=case.method.upper(),
+        request_payload=dict(case.query),
         user_question=case.user_question,
         app_answer_summary=capture.summary,
         benchmark_summary=_benchmark_summary(case, benchmark),
         benchmark_source=benchmark.source,
         benchmark_evidence=benchmark_evidence,
+        parity_summary=_parity_summary(benchmark),
+        parity_checks=list(benchmark.parity_checks),
         response_time_ms=capture.latency_ms,
         slow_threshold_ms=case.slow_latency_ms,
         slow_response=slow_response,
@@ -188,7 +205,13 @@ async def run_evaluation(
                 browser_probe_enabled=browser_probe_enabled,
                 browser_probe_timeout_s=browser_probe_timeout_s,
             )
-            findings.append(judge_case(case, capture, benchmark))
+            finding = judge_case(case, capture, benchmark)
+            diagnostics = await analyze_case_diagnostics(case, capture, finding, target)
+            finding.diagnostic_root_cause = diagnostics.root_cause
+            finding.diagnostic_summary = diagnostics.summary
+            finding.diagnostic_evidence = diagnostics.evidence
+            finding.diagnostic_probes = diagnostics.probes
+            findings.append(finding)
 
     return EvalRun(
         run_id=f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:8]}",

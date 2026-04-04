@@ -100,3 +100,11 @@ def test_latency_warning_is_flagged_for_otherwise_passing_case():
     assert finding.verdict == Verdict.WARNING
     assert finding.slow_response is True
     assert "slow_response" in finding.failure_category
+
+
+def test_daily_profile_includes_trace_debate_and_backtest_cases():
+    cases = build_case_bank(RunProfile.DAILY)
+
+    assert any(case.feature == "trace" for case in cases)
+    assert any(case.feature == "debate" for case in cases)
+    assert any(case.feature == "backtest" and case.method == "POST" for case in cases)

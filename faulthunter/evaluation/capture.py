@@ -43,6 +43,8 @@ def build_capture(case: TestCase, status_code: int, latency_ms: int, payload: An
             summary=f"Request failed: {payload.get('error')}",
             available_fields=available_fields,
             raw_payload=payload,
+            error_type=payload.get("error_type"),
+            error_detail=payload.get("error"),
         )
 
     if case.endpoint == "/decision-terminal":
@@ -90,4 +92,6 @@ def build_capture(case: TestCase, status_code: int, latency_ms: int, payload: An
         freshness_timestamp=freshness,
         available_fields=available_fields,
         raw_payload=payload,
+        error_type=payload.get("error_type"),
+        error_detail=payload.get("error"),
     )

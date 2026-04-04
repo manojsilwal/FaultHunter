@@ -14,6 +14,8 @@ def _next_report_path(report_root: Path, run: EvalRun) -> Path:
     if run.report_kind == ReportKind.DAILY:
         base_dir = report_root / "daily" / year
         stem = dt.strftime("%Y-%m-%d")
+        base_dir.mkdir(parents=True, exist_ok=True)
+        return base_dir / f"{stem}.md"
     else:
         base_dir = report_root / "manual" / year
         stem = dt.strftime("%Y-%m-%dT%H%M%SZ")
@@ -35,9 +37,10 @@ def write_run_outputs(run: EvalRun, report_root: Path, artifact_root: Path) -> E
     report_path = _next_report_path(report_root, run)
     report_path.write_text(render_markdown(run), encoding="utf-8")
 
-    latest_path = report_root / "latest.md"
-    latest_path.parent.mkdir(parents=True, exist_ok=True)
-    latest_path.write_text(report_path.read_text(encoding="utf-8"), encoding="utf-8")
+    if run.report_kind != ReportKind.DAILY:
+        latest_path = report_root / "latest.md"
+        latest_path.parent.mkdir(parents=True, exist_ok=True)
+        latest_path.write_text(report_path.read_text(encoding="utf-8"), encoding="utf-8")
 
     artifact_root.mkdir(parents=True, exist_ok=True)
     artifact_path = artifact_root / "latest-run.json"
