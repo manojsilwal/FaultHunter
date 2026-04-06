@@ -31,7 +31,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
 npm install
-python -m faulthunter.cli --profile smoke --report-kind manual --target-base-url http://localhost:8000
+python -m faulthunter.cli --profile smoke --report-kind manual --target-base-url http://127.0.0.1:5173
 PYTHONPATH=. pytest
 ```
 
@@ -52,7 +52,8 @@ The CLI flag **`--target-base-url`** overrides **`TRADETALK_BASE_URL`** for that
 
 | Goal | Example |
 |------|---------|
-| Local backend | `python -m faulthunter.cli --profile smoke --report-kind manual --target-base-url http://127.0.0.1:8000` |
+| Local (Vite + proxy to API) | Start TradeTalk **backend** on `:8000` and **frontend** `npm run dev` on `:5173`, then: `python -m faulthunter.cli --profile smoke --report-kind manual` (default base is `http://127.0.0.1:5173`) or pass `--target-base-url http://127.0.0.1:5173` |
+| Direct to FastAPI only | `--target-base-url http://127.0.0.1:8000` (no Vite) |
 | Env / default from shell | `export TRADETALK_BASE_URL=https://tradetalkapp-backend.onrender.com` then omit `--target-base-url` |
 | One-off production URL | `--target-base-url https://tradetalkapp-backend.onrender.com` |
 
@@ -71,7 +72,7 @@ gh workflow run "Daily FaultHunter Report" -R manojsilwal/FaultHunter \
   -f target_base_url="https://your-staging-api.example.com"
 ```
 
-**Note:** GitHub Actions cannot reach `http://localhost:8000` on your laptop. For “local” TradeTalk from CI you need a **publicly reachable** URL (tunnel, self-hosted runner, or run FaultHunter CLI on your machine instead).
+**Note:** GitHub Actions cannot reach `http://127.0.0.1:5173` on your laptop. For “local” TradeTalk from CI you need a **publicly reachable** URL (tunnel, self-hosted runner, or run FaultHunter CLI on your machine instead).
 
 ## Environment
 

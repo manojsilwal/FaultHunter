@@ -24,7 +24,9 @@ def load_settings() -> Settings:
     repo_root = _repo_root()
     return Settings(
         repo_root=repo_root,
-        target_base_url=os.environ.get("TRADETALK_BASE_URL", "http://localhost:8000").rstrip("/"),
+        # Default matches TradeTalk Vite dev server (port 5173) with API proxied to FastAPI :8000.
+        # See tradetalkapp frontend/vite.config.js — run backend + `npm run dev` in frontend/.
+        target_base_url=os.environ.get("TRADETALK_BASE_URL", "http://127.0.0.1:5173").rstrip("/"),
         report_root=Path(os.environ.get("FAULTHUNTER_REPORT_ROOT", repo_root / "reports")).resolve(),
         artifact_root=Path(os.environ.get("FAULTHUNTER_ARTIFACT_ROOT", repo_root / "artifacts")).resolve(),
         request_timeout_s=float(os.environ.get("FAULTHUNTER_TIMEOUT_S", "90")),
