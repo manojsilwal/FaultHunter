@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "25 3 * * *"
   workflow_dispatch:
+    inputs:
+      target_base_url:
+        description: "TradeTalk API base URL for this run only. Leave empty to use repository secret TRADETALK_BASE_URL (production/staging)."
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: write
@@ -12,13 +18,23 @@ jobs:
   run-report:
     runs-on: ubuntu-latest
     env:
-      TRADETALK_BASE_URL: ${{ secrets.TRADETALK_BASE_URL }}
       FAULTHUNTER_REPORT_ROOT: reports
       FAULTHUNTER_ARTIFACT_ROOT: artifacts
       FAULTHUNTER_BROWSER_PROBE: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set TradeTalk target URL
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.target_base_url }}" ]; then
+            echo "TRADETALK_BASE_URL=${{ inputs.target_base_url }}" >> "$GITHUB_ENV"
+            echo "Using workflow_dispatch target_base_url override."
+          else
+            echo "TRADETALK_BASE_URL=${{ secrets.TRADETALK_BASE_URL }}" >> "$GITHUB_ENV"
+            echo "Using TRADETALK_BASE_URL secret."
+          fi
 
       - name: Setup Python
         uses: actions/setup-python@v5
